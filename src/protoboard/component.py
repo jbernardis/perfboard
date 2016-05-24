@@ -274,8 +274,9 @@ class FixedComponentList:
         self.componentList["trimpot horizontalr3"] = [[[0, 0], [-1, 0], [-2, 0]],  [[x,y] for x in [0,-1,-2] for y in [1,2]], images.pngTrimpothr3, [-37, -7], "R"]
         self.componentTypes["trimpot horizontal"] = ["trimpot horizontal", "trimpot horizontalr1", "trimpot horizontalr2", "trimpot horizontalr3"]
 
-        self.componentList["tac switch"] = [[[0, 0], [0, 2], [2, 0], [2, 2]],  [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]], images.pngTacswitch, [-2, -2], "S"]
-        self.componentTypes["tac switch"] = ["tac switch"]
+        self.componentList["tac switch"] = [[[0, 0], [3, 0], [0, 2], [3, 2]],  [[0, 1], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2], [3, 1]], images.pngTacswitch, [-2, -5], "S"]
+        self.componentList["tac switchr1"] = [[[0, 0], [2, 0], [0, 3], [2, 3]],  [[0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [1, 3], [2, 1], [2, 2]], images.pngTacswitchr1, [-5, -2], "S"]
+        self.componentTypes["tac switch"] = ["tac switch", "tac switchr1"]
  
         self.componentList["tac switch - lg"] = [
             [[0, 0], [0, 2], [5, 0], [5, 2]],
