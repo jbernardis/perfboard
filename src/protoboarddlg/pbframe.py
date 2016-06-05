@@ -86,6 +86,15 @@ class PBFrame (wx.Window):
 		
 		self.Show()
 		
+	def reSize(self):
+		self.buildarea = self.board.getSize()
+		sz = [(x-1) * self.scale + BORDER*2 for x in self.buildarea]
+		self.SetClientSize(sz)
+		self.refresh()
+		
+	def getSize(self):
+		return self.GetClientSize()
+		
 	def selectHole(self, x, y):
 		if x < 0 or x >= self.buildarea[0] or y < 0 or y >= self.buildarea[1]:
 			return

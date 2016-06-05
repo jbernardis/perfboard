@@ -5,9 +5,10 @@ Created on Dec 22, 2015
 '''
 
 class Wire(object):
-    def __init__(self, p1, p2, color):
+    def __init__(self, p1, p2, id, color):
         self.p1 = p1
         self.p2 = p2
+        self.id = id
         self.color = color
         
     def getXml(self):
@@ -25,6 +26,18 @@ class Wire(object):
     
     def getP2(self):
         return self.p2
+       
+    def setP1(self, np1):
+        self.p1 = np1
+        
+    def setP2(self, np2):
+        self.p2 = np2
+        
+    def getID(self):
+        return self.id
+    
+    def setID(self, id):
+        self.id = id
     
     def getColor(self):
         return self.color

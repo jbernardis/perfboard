@@ -275,7 +275,7 @@ class FixedComponentList:
         self.componentTypes["trimpot horizontal"] = ["trimpot horizontal", "trimpot horizontalr1", "trimpot horizontalr2", "trimpot horizontalr3"]
 
         self.componentList["tac switch"] = [[[0, 0], [3, 0], [0, 2], [3, 2]],  [[0, 1], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2], [3, 1]], images.pngTacswitch, [-2, -5], "S"]
-        self.componentList["tac switchr1"] = [[[0, 0], [2, 0], [0, 3], [2, 3]],  [[0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [1, 3], [2, 1], [2, 2]], images.pngTacswitchr1, [-5, -2], "S"]
+        self.componentList["tac switchr1"] = [[[0, 0], [2, 0], [0, -3], [2, -3]],  [[0, -1], [0, -2], [1, 0], [1, -1], [1, -2], [1, -3], [2, -1], [2, -2]], images.pngTacswitchr1, [-5, -47], "S"]
         self.componentTypes["tac switch"] = ["tac switch", "tac switchr1"]
  
         self.componentList["tac switch - lg"] = [
@@ -402,7 +402,7 @@ WIRENAME = "Wire"
 class StretchComponentList:
     def __init__(self):
         self.stretchNames = {}
-        self.stretchNames[WIRENAME] = ["", LT_WIRE]
+        self.stretchNames[WIRENAME] = ["W", LT_WIRE]
         self.stretchNames["Resistor"] = ["R", LT_RESISTOR]
         self.stretchNames["Capacitor"] = ["C", LT_CAPACITOR]
         self.stretchNames["Diode"] = ["D", LT_DIODE]
