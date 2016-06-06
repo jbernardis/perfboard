@@ -19,7 +19,7 @@ class MoveDlg(wx.Dialog):
 		
 		sizer = wx.BoxSizer(wx.VERTICAL)
 		slidesizer = wx.GridSizer(rows=1, cols=2)
-		btnsizer = wx.StdDialogButtonSizer()
+		btnsizer = wx.BoxSizer(wx.HORIZONTAL)
 
 		self.slideX = wx.Slider(
 			self, wx.ID_ANY, 0, self.minx, self.maxx, size=(150, -1),
@@ -45,21 +45,37 @@ class MoveDlg(wx.Dialog):
 		sbox.Add(self.slideY, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 5)
 		slidesizer.Add(sbox, 0, wx.ALL|wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 5)
 		
-		btn = wx.BitmapButton(self, wx.ID_OK, self.images.pngOk, size=TBDIM)
-		btn.SetToolTipString("Close dialog box to move components")
-		btn.SetDefault()
-		btnsizer.AddButton(btn)
+		btn = wx.BitmapButton(self, wx.ID_ANY, self.images.pngOk, size=TBDIM)
+		btn.SetToolTipString("Close dialog box to move individual components")
+		self.Bind(wx.EVT_BUTTON, self.onOK, btn)
+		btnsizer.Add(btn)
+		btnsizer.AddSpacer((10, 10))
+		
+		btn = wx.BitmapButton(self, wx.ID_ANY, self.images.pngMoveall, size=TBDIM)
+		btn.SetToolTipString("Close dialog box and move ALL components")
+		self.Bind(wx.EVT_BUTTON, self.onMoveAll, btn)
+		btnsizer.Add(btn)
+		btnsizer.AddSpacer((30, 30))
 
-		btn = wx.BitmapButton(self, wx.ID_CANCEL, self.images.pngCancel, size=TBDIM)
+		btn = wx.BitmapButton(self, wx.ID_ANY, self.images.pngCancel, size=TBDIM)
 		btn.SetToolTipString("Cancel Move operation")
-		btnsizer.AddButton(btn)
-		btnsizer.Realize()
+		self.Bind(wx.EVT_BUTTON, self.onCancel, btn)
+		btnsizer.Add(btn)
 
 		sizer.Add(slidesizer, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
 		sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
 
 		self.SetSizer(sizer)
 		sizer.Fit(self)
+		
+	def onOK(self, evt):
+		self.EndModal(wx.ID_OK)
+		
+	def onCancel(self, evt):
+		self.EndModal(wx.ID_CANCEL)
+		
+	def onMoveAll(self, evt):
+		self.EndModal(wx.ID_EXECUTE)
 		
 	def getValues(self):
 		return self.shiftx, -self.shifty

@@ -12,6 +12,7 @@ from protoboard.component import compID, WIRENAME, CLASS_WIRE, CLASS_FIXED, CLAS
 from protoboard import OV_OVERLAP, OV_SKIPPED_HOLE
 from protoboarddlg.infodlg import InfoDialog
 from pbprint import PBPrint
+from pbview import ProtoBoardView
 from pbinstrprint import PBInstructionsPrint
 from protoboarddlg.movedlg import MoveDlg
 from protoboarddlg.trimdlg import TrimDlg
@@ -42,13 +43,13 @@ toolHintText = {
 	TOOL_GROW: ["Add a growable component.  Double click each end for placement, right click to re-anchor", "right click tool for component choices"],
 	TOOL_GRAB: ["Double click a component to select it for editing",""],
 	TOOL_MOVE: ["Double click a component to to move it",""],
-	TOOL_TRIM: ["Trim excess rows and columns from board",""],
+	TOOL_TRIM: ["Resize board by adding/trimming rows and columns",""],
 	TOOL_TRASH : ["Delete - double click an item to delete it",""]
 	}
 
 wildcard = "Proto-board file (*.pb)|*.pb"
 TITLETEXT = "Proto-Board Layout Editor"
-	   
+	
 class ProtoBoardDialog(wx.Dialog):
 	def __init__(self, parent, pb, fn, settings):
 		self.parent = parent 
@@ -64,6 +65,8 @@ class ProtoBoardDialog(wx.Dialog):
 		self.printData.SetPrintMode(wx.PRINT_MODE_PRINTER)
 
 		self.pb = pb
+		self.pbView = None
+		self.prevPosition = [-1, -1]
 		self.fileName = fn
 		self.SetClientSize((600, 300))
 		self.Bind(wx.EVT_CLOSE, self.onClose)
@@ -99,12 +102,12 @@ class ProtoBoardDialog(wx.Dialog):
 				
 		self.tb = wx.BoxSizer(wx.HORIZONTAL)
 		self.tb.AddSpacer((20, 20))
- 
+
 		self.tbExamine = wx.BitmapButton(self, wx.ID_ANY, self.images.pngView, size=TBDIM)
 		self.tbExamine.SetToolTipString("Examine the trace/wire network")
 		self.Bind(wx.EVT_BUTTON, self.onExamine, self.tbExamine)
 		self.tb.Add(self.tbExamine)
- 
+
 		self.tbName = wx.BitmapButton(self, wx.ID_ANY, self.images.pngProperties, size=TBDIM)
 		self.tbName.SetToolTipString("Assign name and/or value to a component")
 		self.Bind(wx.EVT_BUTTON, self.onName, self.tbName)
@@ -116,13 +119,13 @@ class ProtoBoardDialog(wx.Dialog):
 		self.tbCut.SetToolTipString("Cut/replace traces and/or jumpers")
 		self.Bind(wx.EVT_BUTTON, self.onCut, self.tbCut)
 		self.tb.Add(self.tbCut)
-		 
+		
 		self.tbWire = wx.BitmapButton(self, wx.ID_ANY, self.images.pngWire, size=TBDIM)
 		self.tbWire.SetToolTipString("Add a wire to the circuit")
 		self.Bind(wx.EVT_BUTTON, self.onWire, self.tbWire)
 		self.tbWire.Bind(wx.EVT_RIGHT_DOWN, self.onColor)
 		self.tb.Add(self.tbWire)
-		 
+		
 		self.tbComponent = wx.BitmapButton(self, wx.ID_ANY, self.images.pngComponent, size=TBDIM)
 		self.tbComponent.SetToolTipString("Add a fixed-shape component")
 		self.Bind(wx.EVT_BUTTON, self.onComponent, self.tbComponent)
@@ -153,8 +156,8 @@ class ProtoBoardDialog(wx.Dialog):
 		self.Bind(wx.EVT_BUTTON, self.onMove, self.tbMove)
 		self.tb.Add(self.tbMove)
 		
-		self.tbTrim = wx.BitmapButton(self, wx.ID_ANY, self.images.pngTrim, size=TBDIM)
-		self.tbTrim.SetToolTipString("Trim PCB edges")
+		self.tbTrim = wx.BitmapButton(self, wx.ID_ANY, self.images.pngResize, size=TBDIM)
+		self.tbTrim.SetToolTipString("Resize PCB")
 		self.Bind(wx.EVT_BUTTON, self.onTrim, self.tbTrim)
 		self.tb.Add(self.tbTrim)
 		
@@ -196,8 +199,8 @@ class ProtoBoardDialog(wx.Dialog):
 		self.tb.AddSpacer((20, 20))
 
 		self.pbSizer = wx.BoxSizer()
-		self.dsp = PBFrame(self, self.pb, self.settings)
-		self.pbSizer.Add(self.dsp)
+		#self.dsp = PBFrame(self, self.pb, self.settings)
+		#self.pbSizer.Add(self.dsp)
 		
 		self.statusSizer = wx.BoxSizer(wx.HORIZONTAL)
 		self.statusSizer.AddSpacer((5,5))
@@ -205,7 +208,7 @@ class ProtoBoardDialog(wx.Dialog):
 		self.bitmapStatus = wx.StaticBitmap(self, wx.ID_ANY, self.images.pngCut)
 		self.statusSizer.Add(self.bitmapStatus)
 		self.statusSizer.AddSpacer((5,5))
-	   
+	
 		statusMsgSizer = wx.BoxSizer(wx.VERTICAL)
 		
 		self.hintLine1 = wx.StaticText(self, wx.ID_ANY, "")
@@ -214,14 +217,29 @@ class ProtoBoardDialog(wx.Dialog):
 		self.hintLine2 = wx.StaticText(self, wx.ID_ANY, "")
 		statusMsgSizer.Add(self.hintLine2)
 		statusMsgSizer.AddSpacer((5,5))
-	   
+
 		self.statusLine = wx.StaticText(self, wx.ID_ANY, "")
 		statusMsgSizer.Add(self.statusLine)
 		
 		self.statusSizer.Add(statusMsgSizer)
-		 
+		
 		self.buildSizer()
+		wx.CallAfter(self.createPBView)
 		wx.CallAfter(self.setInitialTool)
+		
+	def createPBView(self):
+		#self.updateProtoBoard(False)
+		if not self.pbView is None:
+			try:
+				self.prevPosition = self.pbView.GetPosition()
+				self.pbView.Destroy()
+			except wx.PyDeadObjectError:
+				self.pbView = None
+				self.prevPosition = [-1, -1]
+			
+		self.pbView = ProtoBoardView(self, self.pb, self.prevPosition, self.settings)
+		self.dsp = self.pbView.getPBFrame()
+		self.pbView.Show()
 		
 	def buildSizer(self):
 		sizer = wx.BoxSizer(wx.VERTICAL)
@@ -306,14 +324,14 @@ class ProtoBoardDialog(wx.Dialog):
 		self.dsp.setGrowComponent(None)
 		self.currentGrowComponent = None
 		self.selectTool(TOOL_COMPONENT)
-		 
+		
 	def onStretch(self, evt):
 		self.dsp.setFixedComponent(None)
 		self.currentFixedComponent = None
 		self.dsp.setGrowComponent(None)
 		self.currentGrowComponent = None
 		self.selectTool(TOOL_STRETCH)
-		 
+		
 	def onGrow(self, evt):
 		self.dsp.setStretchComponent(None)
 		self.currentStretchComponent = None
@@ -328,12 +346,21 @@ class ProtoBoardDialog(wx.Dialog):
 	def onMove(self, evt):
 		dlg = MoveDlg(self, self.pb.getSize(), self.settings)
 		rc = dlg.ShowModal()
+		failedMoves = []
 		if rc == wx.ID_OK:
 			self.dx, self.dy = dlg.getValues()
 			self.clearAllComponents()
 			self.selectTool(TOOL_MOVE) 
+		elif rc == wx.ID_EXECUTE:
+			self.dx, self.dy = dlg.getValues()
+			failedMoves = self.moveAllComponents([self.dx, self.dy])
 			
 		dlg.Destroy()
+		
+		if len(failedMoves) != 0:
+			print "%d failed moves" % len(failedMoves)
+			for f in failedMoves:
+				print "  %s" % f
 		
 	def onTrim(self, evt):
 		dlg = TrimDlg(self, self.settings)
@@ -343,20 +370,46 @@ class ProtoBoardDialog(wx.Dialog):
 	def trimRight(self):
 		if self.pb.trimRight():
 			self.dsp.reSize()
+			self.createPBView()
+		
+	def growRight(self):
+		if self.pb.growRight():
+			self.dsp.reSize()
+			self.createPBView()
 		
 	def trimBottom(self):
 		if self.pb.trimBottom():
 			self.dsp.reSize()
+			self.createPBView()
+		
+	def growBottom(self):
+		if self.pb.growBottom():
+			self.dsp.reSize()
+			self.createPBView()
 		
 	def trimLeft(self):
 		if self.pb.trimLeft():
 			self.moveAllComponents([-1, 0])
 			self.dsp.reSize()
+			self.createPBView()
+		
+	def growLeft(self):
+		if self.pb.growLeft():
+			self.moveAllComponents([1, 0])
+			self.dsp.reSize()
+			self.createPBView()
 			
 	def trimTop(self):
 		if self.pb.trimTop():
 			self.moveAllComponents([0, -1])
 			self.dsp.reSize()
+			self.createPBView()
+			
+	def growTop(self):
+		if self.pb.growTop():
+			self.moveAllComponents([0, 1])
+			self.dsp.reSize()
+			self.createPBView()
 		
 	def onTrash(self, evt):
 		self.clearAllComponents()
@@ -376,7 +429,7 @@ class ProtoBoardDialog(wx.Dialog):
 		self.setStatusBitmap(tid)
 		self.dsp.setHiLightedNet(None)
 		self.dsp.refresh()
- 
+
 		if newComponent:	   
 			if tid == TOOL_COMPONENT:
 				self.currentFixedComponent = self.newFixedComponent()
@@ -391,7 +444,7 @@ class ProtoBoardDialog(wx.Dialog):
 			elif tid == TOOL_GROW:
 				self.currentGrowComponent = self.newGrowComponent()
 				self.dsp.setGrowComponent(self.currentGrowComponent)
-		   
+
 	def onColor(self, evt):
 		self.chooseColor(evt)
 		self.onWire(None)
@@ -445,7 +498,7 @@ class ProtoBoardDialog(wx.Dialog):
 	def newFixedComponent(self):
 		c, self.currentComponentPrefix = self.fixedComponentList.getComponent(self.currentFixedComponentChoice)
 		return c
- 
+
 	def newStretchComponent(self, nm = None):
 		if nm is None:
 			nm = self.currentStretchName
@@ -455,7 +508,7 @@ class ProtoBoardDialog(wx.Dialog):
 	def newGrowComponent(self):
 		c, self.currentComponentPrefix = self.growComponentList.getComponent(self.currentGrowComponentChoice)
 		return c
-   
+
 	def holeClick(self, pos):
 		self.dsp.selectHole(pos[0], pos[1])
 		
@@ -501,7 +554,7 @@ class ProtoBoardDialog(wx.Dialog):
 							self.pb.delJumper(p1, p2)
 					self.dsp.refresh()
 		
-	   
+
 	def holeDoubleClick(self, pos):
 		if self.selectedTool == TOOL_CUT:
 			self.doBreak(pos)
@@ -550,11 +603,11 @@ class ProtoBoardDialog(wx.Dialog):
 				# re-anchor
 				self.currentStretchComponent.setP1(pos)
 				self.currentStretchComponent.setP2(pos)
-		 
+
 			elif nm == WIRENAME:
 				self.currentStretchComponent.setP2(pos)
-				id = compID.generateID(self.currentComponentPrefix) 
-				self.currentStretchComponent.setID(id)
+				wid = compID.generateID(self.currentComponentPrefix) 
+				self.currentStretchComponent.setID(wid)
 				self.pb.addWire(self.currentStretchComponent, self.wireColor)
 				self.currentStretchComponent = self.newStretchComponent(WIRENAME)
 				self.dsp.setStretchComponent(self.currentStretchComponent)
@@ -576,8 +629,7 @@ class ProtoBoardDialog(wx.Dialog):
 		if self.pb.noTrace(pos):
 			self.setStatusText("no Trace at that position")
 			return
- 
- 
+
 		pt = self.currentGrowComponent.getP1()
 		if pt is None:
 			self.currentGrowComponent.setP1(pos)
@@ -609,7 +661,7 @@ class ProtoBoardDialog(wx.Dialog):
 			if self.pb.noTrace([pos[0]+p[0], pos[1]+p[1]]):
 				self.setStatusText("no Trace at that position")
 				return
- 
+
 		self.currentFixedComponent.setAnchor(pos)
 
 		nm = compID.generateID(self.currentComponentPrefix) 
@@ -620,7 +672,7 @@ class ProtoBoardDialog(wx.Dialog):
 		self.currentFixedComponent.setAnchor(pos)
 		self.fixedComponentList.setView(self.currentFixedComponent, cv)
 		self.dsp.setFixedComponent(self.currentFixedComponent)
-		   
+
 	def doExamine(self, pos):
 		if self.pb.noTrace(pos):
 			self.setStatusText("No trace at that position")
@@ -779,27 +831,34 @@ class ProtoBoardDialog(wx.Dialog):
 		self.moveComponent(c, cclass, [self.dx, self.dy])
 		
 	def moveAllComponents(self, delta):
+		failedMoves = []
 		for c in self.pb.getComponentList():
-			self.moveComponent(c, CLASS_FIXED, delta)
+			if not self.moveComponent(c, CLASS_FIXED, delta, True):
+				failedMoves.append(c.getID())
 			
 		for c in self.pb.getStretchComponentList():
-			self.moveComponent(c, CLASS_STRETCH, delta)
+			if not self.moveComponent(c, CLASS_STRETCH, delta, True):
+				failedMoves.append(c.getID())
 			
 		for c in self.pb.getWireList():
-			self.moveComponent(c, CLASS_WIRE, delta)
+			if not self.moveComponent(c, CLASS_WIRE, delta, True):
+				failedMoves.append(c.getID())
 			
 		for c in self.pb.getGrowComponentList():
-			self.moveComponent(c, CLASS_GROW, delta)
+			if not self.moveComponent(c, CLASS_GROW, delta, True):
+				failedMoves.append(c.getID())
+			
+		return failedMoves
 
 
 		
-	def moveComponent(self, c, cclass, delta):
+	def moveComponent(self, c, cclass, delta, silent=False):
 		if c is None:
 			return
 		
 		dx = delta[0]
 		dy = delta[1]
-	   
+
 		if cclass in [CLASS_WIRE, CLASS_STRETCH]:
 			self.dsp.setFixedComponent(None)
 			self.currentFixedComponent = None
@@ -811,35 +870,42 @@ class ProtoBoardDialog(wx.Dialog):
 			
 			np1 = [p1[0]+dx, p1[1]+dy]
 			np2 = [p2[0]+dx, p2[1]+dy]
-			   
+
 			if self.pb.outOfBounds(np1):
-				self.setStatusText("New position A is off of the board")
-				return
+				if not silent:
+					self.setStatusText("New position A is off of the board")
+				return False
 			
 			if self.pb.occupied(np1, comp=c):
-				self.setStatusText("New position A is already occupied")
-				return
+				if not silent:
+					self.setStatusText("New position A is already occupied")
+				return False
 			
 			if self.pb.noTrace(np1):
-				self.setStatusText("No trace at new position A")
-				return
- 			   
+				if not silent:
+					self.setStatusText("No trace at new position A")
+				return False
+
 			if self.pb.outOfBounds(np2):
-				self.setStatusText("New position B is off of the board")
-				return
+				if not silent:
+					self.setStatusText("New position B is off of the board")
+				return False
 
 			if self.pb.occupied(np2, comp=c):
-				self.setStatusText("New position B is already occupied")
-				return
+				if not silent:
+					self.setStatusText("New position B is already occupied")
+				return False
 			
 			if self.pb.noTrace(np2):
-				self.setStatusText("No trace at new position B")
-				return
-		   
+				if not silent:
+					self.setStatusText("No trace at new position B")
+				return False
+
 			c.setP1(np1)
 			c.setP2(np2)
-				   
+
 			self.dsp.refresh()
+			return True
 			
 		elif cclass == CLASS_FIXED:
 			self.dsp.setStretchComponent(None)
@@ -852,20 +918,24 @@ class ProtoBoardDialog(wx.Dialog):
 			for p in c.getCovered():
 				np = [p[0] + ap[0] + dx, p[1]+ap[1] + dy]
 				if self.pb.outOfBounds(np):
-					self.setStatusText("Component will be off of the board")
-					return
+					if not silent:
+						self.setStatusText("Component will be off of the board")
+					return False
 
 				if self.pb.occupied(np, comp=c):
-					self.setStatusText("New position is already occupied")
-					return
+					if not silent:
+						self.setStatusText("New position is already occupied")
+					return False
 			
 				if self.pb.noTrace(np):
-					self.setStatusText("No trace at new position")
-					return
+					if not silent:
+						self.setStatusText("No trace at new position")
+					return False
 				
 			c.setAnchor([ap[0]+dx, ap[1]+dy])
 			
 			self.dsp.refresh()
+			return True
 
 		elif cclass == CLASS_GROW:
 			self.dsp.setStretchComponent(None)
@@ -885,21 +955,25 @@ class ProtoBoardDialog(wx.Dialog):
 				for py in range(miny, maxy+1):
 					np = [px + dx, py + dy]
 					if self.pb.outOfBounds(np):
-						self.setStatusText("Component will be off of the board")
-						return
+						if not silent:
+							self.setStatusText("Component will be off of the board")
+						return False
 	
 					if self.pb.occupied(np, comp=c):
-						self.setStatusText("New position is already occupied")
-						return
+						if not silent:
+							self.setStatusText("New position is already occupied")
+						return False
 				
 					if self.pb.noTrace(np):
-						self.setStatusText("No trace at new position")
-						return
+						if not silent:
+							self.setStatusText("No trace at new position")
+						return False
 					
 			c.setP1([p1[0]+dx, p1[1]+dy])
 			c.setP2([p2[0]+dx, p2[1]+dy])
 			
 			self.dsp.refresh();
+			return True
 			
 		
 	def getIDPrefix(self, c):
@@ -932,11 +1006,11 @@ class ProtoBoardDialog(wx.Dialog):
 			s = c.getName().strip()
 			if s != "":
 				text += "  " + s
-			 
+
 			s = c.getValue().strip()
 			if s != "":
 				text += " (" + s + ")"   
-	   
+
 		self.setStatusText(text)
 		
 		if not self.currentStretchComponent is None:
@@ -948,7 +1022,7 @@ class ProtoBoardDialog(wx.Dialog):
 				self.setStatusText("Components would overlap")
 			elif rc == OV_SKIPPED_HOLE:
 				self.setStatusText("Component would extend over region with no holes")
-		  
+
 		if not self.currentFixedComponent is None:
 			self.currentFixedComponent.setAnchor(pos)
 			self.dsp.refresh()
@@ -1008,14 +1082,14 @@ class ProtoBoardDialog(wx.Dialog):
 			dlg.ShowModal()
 			dlg.Destroy()
 			return False
-		 
+
 		self.pb.setModified(False)
 		dlg = wx.MessageDialog(self, 'Proto Board saved to ' + fn,
 			'Saved', wx.OK | wx.ICON_INFORMATION)
 		dlg.ShowModal()
 		dlg.Destroy()
 		return True
-	   
+
 	def onClose(self, evt):
 		if self.pb.isModified():
 			dlg = wx.MessageDialog(self, 'Are you sure you want to exit?\nPending changes will be lost',

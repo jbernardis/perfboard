@@ -165,7 +165,7 @@ class ProtoBoard(object):
 					del self.components[cx]
 					self.setModified()
 					return True
-			 
+			
 		for cx in range(len(self.growComponents)):
 			c = self.growComponents[cx]
 			p1 = c.getP1()
@@ -187,7 +187,7 @@ class ProtoBoard(object):
 				del(self.growComponents[cx])
 				self.setModified()
 				return True
-		  
+
 		return False
 		
 	def findByPosition(self, pos, delete=False):
@@ -216,7 +216,7 @@ class ProtoBoard(object):
 						del(self.components[cx])
 						self.setModified()
 					return c, CLASS_FIXED
-			 
+
 		for cx in range(len(self.growComponents)):
 			c = self.growComponents[cx]
 			p1 = c.getP1()
@@ -239,7 +239,7 @@ class ProtoBoard(object):
 					del(self.growComponents[cx])
 					self.setModified()
 				return c, CLASS_GROW
-		  
+
 		return None, None
 	
 	def isConnected(self, p1, p2):
@@ -252,7 +252,7 @@ class ProtoBoard(object):
 			j.followed = False
 			
 		return self.followWires(p1, p2)
- 
+	
 	def sameTrace(self, p1, p2):
 		if p1[0] != p2[0] and p1[1] != p2[1]:
 			return False
@@ -315,7 +315,7 @@ class ProtoBoard(object):
 				return False
 			if p2[0] <= c[0] and c[1] <= p1[0]:
 				return False
- 
+
 		return True
 	
 	def followWires(self, p1, p2):
@@ -375,7 +375,7 @@ class ProtoBoard(object):
 			yb = p1[1]
 			
 		region = [[x,y] for x in range(xa,xb+1) for y in range(ya,yb+1)]
-	   
+
 		for s in self.vSkips:
 			for y in range(self.nrows):
 				if [s, y] in region:
@@ -423,7 +423,7 @@ class ProtoBoard(object):
 						return OV_OVERLAP
 			
 		return OV_OK
-	   
+
 	def outOfBounds(self, pos):
 		x = pos[0]
 		y = pos[1]
@@ -445,7 +445,7 @@ class ProtoBoard(object):
 		for w in self.wires:
 			if compId == w.getID():
 				continue
-			   
+
 			p = w.getP1()
 			if pos[0] == p[0] and pos[1] == p[1]:
 				return True
@@ -465,7 +465,7 @@ class ProtoBoard(object):
 			for p in pts:
 				if pos[0] == p[0]+a[0] and pos[1] == p[1]+a[1]:
 					return True
-			 
+
 		for w in self.stretchComponents:
 			if compId == w.getID():
 				continue
@@ -498,9 +498,9 @@ class ProtoBoard(object):
 				
 			if minx <= pos[0] and pos[0] <= maxx and miny <= pos[1] and pos[1] <= maxy:
 				return True
-			 
+
 		return False
-		 
+
 	def addWire(self, comp, color):
 		self.setModified()
 		self.wires.append(Wire(comp.getP1(), comp.getP2(), comp.getID(), color))
@@ -593,6 +593,29 @@ class ProtoBoard(object):
 		self.setModified()			
 		return True
 	
+	def growRight(self):
+		oldCol = self.ncols-1
+		self.ncols += 1
+
+		nvt = []
+		for vt in self.vTraces:
+			nvt.append(vt)
+			if vt[0] == oldCol:
+				nvt.append([oldCol+1, vt[1], vt[2]])
+		self.vTraces = nvt
+		
+		nht = []
+		for ht in self.hTraces:
+			if ht[0] == oldCol and ht[1] == oldCol:
+				nht.append(ht)
+				nht.append([oldCol+1, oldCol+1, ht[2]])
+			elif ht[1] == oldCol:
+				nht.append([ht[0], oldCol+1, ht[2]])
+			else:
+				nht.append(ht)
+		self.hTraces = nht
+		return True
+	
 	def trimLeft(self):
 		if self.ncols <= 2:
 			return False
@@ -601,7 +624,6 @@ class ProtoBoard(object):
 			if self.occupied([0, rw]):
 				return False
 
-		c = self.ncols			
 		self.ncols -= 1
 		
 		nht = []
@@ -644,6 +666,28 @@ class ProtoBoard(object):
 		self.vSkips = nskp  	
 
 		self.setModified()					
+		return True
+	
+	def growLeft(self):
+		self.ncols += 1
+
+		nvt = []
+		for vt in self.vTraces:
+			nvt.append([vt[0]+1, vt[1], vt[2]])
+			if vt[0] == 0:
+				nvt.append(vt)
+		self.vTraces = nvt
+		
+		nht = []
+		for ht in self.hTraces:
+			if ht[0] == 0 and ht[1] == 0:
+				nht.append(ht)
+				nht.append([1, 1, ht[2]])
+			elif ht[0] == 0:
+				nht.append([0, ht[1]+1, ht[2]])
+			else:
+				nht.append([ht[0]+1, ht[1]+1, ht[2]])
+		self.hTraces = nht
 		return True
 		
 	def trimBottom(self):
@@ -701,6 +745,30 @@ class ProtoBoard(object):
 		self.setModified()			
 		return True
 	
+	def growBottom(self):
+		oldRow = self.nrows-1
+		self.nrows += 1
+
+		nht = []
+		for ht in self.hTraces:
+			nht.append(ht)
+			if ht[2] == oldRow:
+				nht.append([ht[0], ht[1], oldRow+1])
+		self.hTraces = nht
+		
+		nvt = []
+		for vt in self.vTraces:
+			if vt[1] == oldRow and vt[2] == oldRow:
+				nvt.append(vt)
+				nvt.append([vt[0], oldRow+1, oldRow+1])
+			elif vt[2] == oldRow:
+				nvt.append([vt[0], vt[1], oldRow+1])
+			else:
+				nvt.append(vt)
+		self.vTraces = nvt
+		return True
+	
+	
 	def trimTop(self):
 		if self.nrows <= 2:
 			return False
@@ -753,8 +821,29 @@ class ProtoBoard(object):
 		self.hSkips = nskp  	
 
 		self.setModified()	
-		return True		
+		return True	
+	
+	def growTop(self):
+		self.nrows += 1
 
+		nht = []
+		for ht in self.hTraces:
+			nht.append([ht[0], ht[1], ht[2]+1])
+			if ht[2] == 0:
+				nht.append([ht[0], ht[1], 0])
+		self.hTraces = nht
+		
+		nvt = []
+		for vt in self.vTraces:
+			if vt[1] == 0 and vt[2] == 0:
+				nvt.append(vt)
+				nvt.append([vt[0], 1, 1])
+			elif vt[1] == 0:
+				nvt.append([vt[0], 0, vt[2]+1])
+			else:
+				nvt.append([vt[0], vt[1]+1, vt[2]+1])
+		self.vTraces = nvt
+		return True
 	
 	def noTrace(self, pos):
 		if pos[0] < 0 or pos[0] >= self.ncols:
@@ -795,7 +884,7 @@ class ProtoBoard(object):
 	def addHCut(self, col1, col2, row):
 		if col1 < 0 or col1 >= self.ncols:
 			raise ProtoBoardPositionError
-		 
+
 		if col2 < 0 or col2 >= self.ncols:
 			raise ProtoBoardPositionError
 		
@@ -810,7 +899,7 @@ class ProtoBoard(object):
 	def delHCut(self, col1, col2, row):
 		if col1 < 0 or col1 >= self.ncols:
 			raise ProtoBoardPositionError
-		 
+
 		if col2 < 0 or col2 >= self.ncols:
 			raise ProtoBoardPositionError
 		
@@ -865,7 +954,7 @@ class ProtoBoard(object):
 			return True
 		
 		return False
- 
+
 	def addJumper(self, pos1, pos2):
 		if pos1[1] < 0 or pos1[1] >= self.nrows:
 			raise ProtoBoardPositionError
@@ -933,7 +1022,7 @@ class ProtoBoard(object):
 			
 	def getJumpers(self):
 		return self.jumpers
-			   
+
 	def traceRemove(self, pos):
 		if pos[1] < 0 or pos[1] >= self.nrows:
 			raise ProtoBoardPositionError
@@ -971,7 +1060,7 @@ class ProtoBoard(object):
 	def addHTrace(self, col1, col2, row):
 		if col1 < 0 or col1 >= self.ncols:
 			raise ProtoBoardPositionError
-		 
+
 		if col2 < 0 or col2 >= self.ncols:
 			raise ProtoBoardPositionError
 		
@@ -991,7 +1080,7 @@ class ProtoBoard(object):
 			raise ProtoBoardPositionError
 		
 		self.vTraces.append([col, row1, row2])
-				 
+
 	def getTraces(self):
 		result = []
 		for t in self.hTraces:
@@ -1021,7 +1110,7 @@ class ProtoBoard(object):
 		for c in self.hCuts:
 			if c[2] == y and (c[0] >= x1 and c[0] <= x2) and (c[1] >= x1 and c[1] <= x2):
 				brks.append((c[0], c[1]))
- 
+
 		sx = x1			   
 		for b in sorted(brks):
 			if b[1] is None:
@@ -1091,4 +1180,3 @@ class ProtoBoard(object):
 	
 	def getSkips(self):
 		return self.hSkips, self.vSkips
-		 
