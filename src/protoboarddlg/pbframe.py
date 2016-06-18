@@ -1,6 +1,6 @@
 import wx 
 import math
-from protoboard.component import LT_LED_BLUE, LT_LED_GREEN, LT_LED_ORANGE, LT_LED_RED, LT_LED_WHITE, LT_LED_YELLOW, LT_RESISTOR, LT_DIODE, LT_CAPACITOR, LT_WIRE
+from protoboard.component import LT_LED_BLUE, LT_LED_GREEN, LT_LED_ORANGE, LT_LED_RED, LT_LED_WHITE, LT_LED_YELLOW, LT_RESISTOR2, LT_RESISTOR4, LT_DIODE, LT_CAPACITOR, LT_WIRE
 from protoboard import OV_OK
 
 clrGrid = wx.Colour(160, 160, 160)
@@ -379,12 +379,16 @@ class PBFrame (wx.Window):
 		x2 = self.transX(p2[0])
 		y2 = self.transY(p2[1])
 		
-		if lt in [LT_RESISTOR, LT_CAPACITOR]:
-			compLength = 10
+		if lt ==LT_RESISTOR4:
+			compLength = 22
+		elif lt == LT_RESISTOR2:
+			compLength = 32
+		elif lt == LT_CAPACITOR:
+			compLength = 22
 		elif lt in LED_List:
 			compLength = 1
 		elif lt == LT_DIODE:
-			compLength = 8
+			compLength = 16
 		else:
 			compLength = 0
 		
@@ -392,13 +396,16 @@ class PBFrame (wx.Window):
 		yd = y2 - y1
 		llen = math.hypot(xd, yd)
 		
-		if compLength*2 >= llen and lt in [LT_RESISTOR, LT_CAPACITOR, LT_DIODE]:
+		if compLength*2 >= llen and lt in [LT_RESISTOR2, LT_RESISTOR4, LT_CAPACITOR, LT_DIODE]:
 			drawVert = True
 		else:
 			drawVert = False
 
 		if drawVert:
-			if lt == LT_RESISTOR:
+			if lt == LT_RESISTOR2:
+				cpen = wx.Pen(clrResistor, 16)
+				cpen.SetCap(wx.CAP_ROUND)
+			elif lt == LT_RESISTOR4:
 				cpen = wx.Pen(clrResistor, 12)
 				cpen.SetCap(wx.CAP_ROUND)
 			elif lt == LT_CAPACITOR:
@@ -435,14 +442,17 @@ class PBFrame (wx.Window):
 			run = 0
 			rise = compLength
 		
-		if lt == LT_RESISTOR:
-			cpen = wx.Pen(clrResistor, 8)
+		if lt == LT_RESISTOR4:
+			cpen = wx.Pen(clrResistor, 12)
+			cpen.SetCap(wx.CAP_BUTT)
+		elif lt == LT_RESISTOR2:
+			cpen = wx.Pen(clrResistor, 16)
 			cpen.SetCap(wx.CAP_BUTT)
 		elif lt == LT_CAPACITOR:
-			cpen = wx.Pen(clrCapacitor, 8)
+			cpen = wx.Pen(clrCapacitor, 12)
 			cpen.SetCap(wx.CAP_BUTT)
 		elif lt == LT_DIODE:
-			cpen = wx.Pen(clrDiode, 8)
+			cpen = wx.Pen(clrDiode, 12)
 			cpen.SetCap(wx.CAP_BUTT)
 		elif lt in LED_List:
 			cpen = wx.Pen(clrLED[lt], 12)
