@@ -32,6 +32,8 @@ class MyFrame(wx.Frame):
         wx.Frame.__init__(self, None, wx.ID_ANY, "Proto-board layout editor")
         
         self.settings = Settings()
+	self.editDlg = None
+	self.Bind(wx.EVT_CLOSE, self.onClose)
         
         self.settings.images = Images(os.path.join(self.settings.cmdfolder, "images"))
         self.settings.compImages = Images(os.path.join(self.settings.cmdfolder, "components"))
@@ -66,6 +68,12 @@ class MyFrame(wx.Frame):
         sizer.AddSpacer((50, 20))
         self.SetSizer(sizer)
         self.Fit()
+
+    def onClose(self, evt):
+        if self.editDlg is not None:
+		return
+
+	self.Destroy()
 
     def onNewTemp(self, evt):
         dlg = NewTempDialog(self)
@@ -115,9 +123,21 @@ class MyFrame(wx.Frame):
             self.presentEditor(sb)
      
     def presentEditor(self, pb):       
-        dlg = ProtoBoardDialog(self, pb, self.fileName, self.settings)
-        dlg.ShowModal()
-        dlg.Destroy()
+        self.editDlg = ProtoBoardDialog(self, pb, self.fileName, self.settings)
+	self.editDlg.Show()
+	self.bOpen.Enable(False)
+	self.bNew.Enable(False)
+	self.bNewTemp.Enable(False)
+        #dlg.ShowModal()
+        #dlg.Destroy()
+
+    def onEditorClose(self):
+        self.editDlg.Destroy()
+        self.editDlg = None
+	self.bOpen.Enable(True)
+	self.bNew.Enable(True)
+	self.bNewTemp.Enable(True)
+  
         
     def loadBoard(self, fn):
         try:

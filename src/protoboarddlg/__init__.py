@@ -1101,7 +1101,7 @@ class ProtoBoardDialog(wx.Dialog):
 			if rc == wx.ID_NO:
 				return
 			
-		self.EndModal(wx.ID_OK)
+		self.parent.onEditorClose()
 		
 	def onPrint(self, evt):
 		self.printData = wx.PrintData()
