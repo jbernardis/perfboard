@@ -31,6 +31,13 @@ class ProtoBoard(object):
 		self.stretchComponents = []
 		self.growComponents = []
 		self.modified = False
+		self.description = None
+		
+	def getDescription(self):
+		return self.description
+	
+	def setDescription(self, desc):
+		self.description = desc
 		
 	def clearTraces(self):
 		self.hTraces = []
@@ -40,9 +47,12 @@ class ProtoBoard(object):
 		self.vSkips = []
 		self.hSkips = []
 		
-	def getXml(self):
+	def getXml(self, includeDescription=False):
 		result = "<stripboard>\n"
 		result += "<size>%d,%d</size>\n" % (self.ncols, self.nrows)
+		
+		if includeDescription and self.description is not None:
+			result += "<description>%s</description>\n" % self.description
 		
 		result += "<htraces>\n"
 		for t in self.hTraces:

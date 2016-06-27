@@ -1,5 +1,6 @@
 <stripboard>
 <size>15,18</size>
+<description>this was the description</description>
 <htraces>
 <trace>0,14,0</trace>
 <trace>0,14,1</trace>
