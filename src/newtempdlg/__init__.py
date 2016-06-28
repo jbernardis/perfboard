@@ -249,6 +249,12 @@ class NewTempDialog(wx.Dialog):
 		tbSizer.Add(self.bPrev)
 		tbSizer.AddSpacer((20, 20))
 		
+		self.bNew = wx.BitmapButton(self, wx.ID_ANY, self.settings.images.pngNewtempfile, size=TBDIM)
+		self.bNew.SetToolTipString("Create a new Template File")
+		self.Bind(wx.EVT_BUTTON, self.onNew, self.bNew)
+		tbSizer.Add(self.bNew)
+		tbSizer.AddSpacer((5, 5))
+		
 		self.bLoad = wx.BitmapButton(self, wx.ID_ANY, self.settings.images.pngOpen, size=TBDIM)
 		self.bLoad.SetToolTipString("Load a Template File")
 		self.Bind(wx.EVT_BUTTON, self.onLoad, self.bLoad)
@@ -282,6 +288,44 @@ class NewTempDialog(wx.Dialog):
 		self.rbHTrace.SetValue(1)
 		self.onHTrace(None)
 		
+	def updateTitle(self):
+		if self.fileName is None:
+			self.SetTitle("New Proto-board template")
+		else:
+			self.SetTitle("Proto-board template file: %s" % self.fileName)
+		
+	def onNew(self, evt):
+		if self.modified:
+			if not self.abandonChanges():
+				return
+			
+		self.stype = STYPE_HTRACE
+		self.segments = []
+		self.selectedSegment = wx.NOT_FOUND
+		self.cols = 5
+		self.rows = 5
+		self.modified = False
+		
+		self.fileName = None
+		
+		self.createProtoBoard()
+		self.tcDesc.SetValue("")
+		self.scRows.SetValue(self.rows)
+		self.scCols.SetValue(self.cols)
+
+		self.scAX.SetRange(0, self.cols-1)
+		self.scAX.SetValue(0)
+		self.scBX.SetRange(0, self.cols-1)
+		self.scBX.SetValue(0)
+		self.scAY.SetRange(0, self.rows-1)
+		self.scAY.SetValue(0)
+		self.scBY.SetRange(0, self.rows-1)
+		self.scBY.SetValue(0)
+		self.setSegmentList()
+		self.rbHTrace.SetValue(True)
+		self.setHTrace()
+		self.updateTitle()
+		
 	def onLoad(self, evt):
 		if self.modified:
 			if not self.abandonChanges():
@@ -311,6 +355,7 @@ class NewTempDialog(wx.Dialog):
 			return
 		
 		self.fileName = path
+		self.updateTitle()
 		
 		dsc = pb.getDescription()
 		if dsc is None:
@@ -389,9 +434,6 @@ class NewTempDialog(wx.Dialog):
 		if rc != wx.ID_OK:
 			return
 		
-		if not path.lower().endswith(".pb"):
-			path += ".pb"
-			
 		if self.saveToFile(path):
 			self.fileName = path
 			self.updateTitle()
@@ -623,6 +665,9 @@ class NewTempDialog(wx.Dialog):
 		self.updateProtoBoard()
 
 	def onHTrace(self, evt):
+		self.setHTrace()
+		
+	def setHTrace(self):
 		self.stype = STYPE_HTRACE
 		self.scAX.Enable(True)
 		self.scAY.Enable(True)

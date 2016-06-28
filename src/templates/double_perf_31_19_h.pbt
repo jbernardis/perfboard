@@ -1,5 +1,6 @@
 <stripboard>
 <size>31,19</size>
+<description>BPS Protoboard 2H-1 - horizontal</description>
 <htraces>
 <trace>0,1,0</trace>
 <trace>2,3,0</trace>
