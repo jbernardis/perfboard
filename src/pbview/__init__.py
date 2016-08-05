@@ -14,6 +14,7 @@ class ProtoBoardView(wx.Dialog):
 		
 		self.SetClientSize((600, 600))
 		self.Bind(wx.EVT_CLOSE, self.onClose)
+		self.Show()
 		
 		self.dsp = PBFrame(self, self.pb, self.settings)
 		

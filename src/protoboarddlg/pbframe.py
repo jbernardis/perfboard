@@ -72,6 +72,7 @@ class PBFrame (wx.Window):
 		
 		wx.Window.__init__(self,parent,size=sz)
 		self.SetClientSize(sz)
+		self.Show()
 		
 		self.initBuffer()
 		self.Bind(wx.EVT_SIZE, self.onSize)
@@ -83,8 +84,8 @@ class PBFrame (wx.Window):
 		self.Bind(wx.EVT_MOTION, self.onMotion)
 		self.Bind(wx.EVT_LEAVE_WINDOW, self.onLeaveWindow)
 		self.Bind(wx.EVT_ENTER_WINDOW, self.onEnterWindow)
-		
 		self.Show()
+		
 		
 	def reSize(self):
 		self.buildarea = self.board.getSize()
