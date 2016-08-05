@@ -1,5 +1,6 @@
 <stripboard>
 <size>12,17</size>
+<description>Sparkfun Solderable Breadboard mini - vertical</description>
 <htraces>
 <trace>0,4,0</trace>
 <trace>7,11,0</trace>

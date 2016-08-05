@@ -1,5 +1,6 @@
 <stripboard>
 <size>12,30</size>
+<description>SB300 Solderable PC BreadBoard - vertical</description>
 <htraces>
 <trace>0,4,0</trace>
 <trace>7,11,0</trace>

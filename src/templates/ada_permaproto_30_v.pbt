@@ -1,5 +1,6 @@
 <stripboard>
 <size>18,30</size>
+<description>Adafruit Perma-Proto half - vertical</description>
 <htraces>
 <trace>3,7,0</trace>
 <trace>10,14,0</trace>
